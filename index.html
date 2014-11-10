@@ -112,7 +112,7 @@
 		//camera.position.x = redSphere.body.position.x + 50;
 		//camera.position.z = redSphere.body.position.z;
 		if (plane)
-		camera.lookAt(plane.body.position);
+			camera.lookAt(plane.body.position);
 
 		renderer.render( scene, camera );
 	});
@@ -121,26 +121,6 @@
 	var keyboard	= new THREEx.KeyboardState(renderer.domElement);
 	renderer.domElement.setAttribute("tabIndex", "0");
 	renderer.domElement.focus();
-
-/*	updateFcts.push(function(delta, now) {
-		if ( keyboard.pressed('left') ) {
-			redSphere.body.angularVelocity.x = 20;
-		} else if( keyboard.pressed('right') ) {
-			redSphere.body.angularVelocity.x = -20;
-		} else {
-			redSphere.body.angularVelocity.x = 0;
-		}
-
-		if ( keyboard.pressed('up') ) {
-			redSphere.body.angularVelocity.z = 20;
-		} else if( keyboard.pressed('down') ) {
-			redSphere.body.angularVelocity.z = -20;
-		} else {
-			redSphere.body.angularVelocity.z = 0;
-		}
-
-	});*/
-
 
 	var generateControls = function (target, keys) {
 		return function () {
@@ -171,15 +151,6 @@
 	updateFcts.push(generateControls(redSphere, {left: 'left', right: 'right', up: 'up', down: 'down'}));
 	updateFcts.push(generateControls(blueSphere, {left: 'a', right: 'd', up: 'w', down: 's'}));
 
-	var i =0;
-
-	renderer.domElement.onmousewheel = function (event) {
-		// called when the window is scrolled.
-		console.log('scroll', event);
-
-		plane.setRotationFromAxisAngle(10*(i++));
-	};
-
 	// only on keyup
 	keyboard.domElement.addEventListener('keyup', function(event){
 		if( keyboard.eventMatches(event, 'r') )	{
@@ -195,9 +166,6 @@
 		lastTimeMs	= lastTimeMs || nowMs - 1000/60;
 		var deltaMs	= Math.min(200, nowMs - lastTimeMs);
 		lastTimeMs	= nowMs;
-
-
-
 
 
 		// call each update function
