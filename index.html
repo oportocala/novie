@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title></title>
+	<style>
+
+		body { margin: 0; padding: 0; background-color: #bbbbbb;}
+		canvas { width: 100%; height: 100% }
+	</style>
+</head>
+<body>
+
+<div class="scene-wrapper">
+
+</div>
+
+<script src="bower_components/threex.cannonjs/examples/vendor/three.js/build/three.min.js"></script>
+<script src="app/js/oribitControls.js"></script>
+<script src="bower_components/threex.cannonjs/vendor/cannon.js/build/cannon.js"></script>
+<script src="bower_components/threex.cannonjs/threex.cannonbody.js"></script>
+<script src="bower_components/threex.cannonjs/threex.cannonworld.js"></script>
+<script src="bower_components/threex.keyboardstate/threex.keyboardstate.js"></script>
+<!--<script src="app/js/setup.js"></script>
+<script src="app/js/geometry.js"></script>
+<script src="app/js/loop.js"></script>-->
+<script>
+
+	var d2r = .017453292519943295;
+
+	var scene = new THREE.Scene();
+	var camera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 0.1, 1000 );
+
+	var renderer = new THREE.WebGLRenderer();
+
+
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	document.getElementsByClassName('scene-wrapper').item(0).appendChild( renderer.domElement );
+
+	camera.position.x = 80;
+	camera.position.y = 60;
+	camera.position.z = 0;
+
+
+	var updateFcts	= [];
+	var worldX  = new THREEx.CannonWorld().start();
+
+	var stoneMaterial	= new CANNON.Material('stone');
+	worldX.world.addContactMaterial(new CANNON.ContactMaterial(
+			stoneMaterial,
+			stoneMaterial,
+			0.1,	// friction
+			0.1	// Restitution
+	));
+
+
+	var  generateSphere = function (color, y) {
+		var geometry = new THREE.SphereGeometry(1, 10, 10);
+		var material = new THREE.MeshBasicMaterial( { color: color || 0x00000, wireframe: true } );
+		var mesh = new THREE.Mesh( geometry, material );
+
+		mesh.position.y = y;
+		scene.add( mesh );
+
+
+		var physicsBody	= new THREEx.CannonBody({
+			mesh	: mesh,
+			material: stoneMaterial,
+			mass: 100
+		}).addTo(worldX);
+
+		updateFcts.push(function(delta, now){
+			physicsBody.update(delta, now)
+		});
+
+		//physicsBody.body.angularVelocity.set(0,0,20);
+
+
+		return physicsBody;
+	};
+
+
+	var plane = function generatePlane() {
+
+		var geometry = new THREE.CubeGeometry(100, 1, 100, 1, 1);
+		var material = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+		var mesh = new THREE.Mesh( geometry, material );
+
+		mesh.position.y = -.5;
+
+		scene.add(mesh);
+
+
+		var physicsBody	= new THREEx.CannonBody({
+			mesh	: mesh,
+			material: stoneMaterial,
+			mass	: 0
+		})
+		.addTo(worldX);
+
+
+		updateFcts.push(function(delta, now){
+			physicsBody.update(delta, now)
+		});
+
+		return physicsBody;
+	}();
+
+
+	updateFcts.push(function() {
+
+		//camera.position.x = redSphere.body.position.x + 50;
+		//camera.position.z = redSphere.body.position.z;
+		if (plane)
+		camera.lookAt(plane.body.position);
+
+		renderer.render( scene, camera );
+	});
+
+
+	var keyboard	= new THREEx.KeyboardState(renderer.domElement);
+	renderer.domElement.setAttribute("tabIndex", "0");
+	renderer.domElement.focus();
+
+/*	updateFcts.push(function(delta, now) {
+		if ( keyboard.pressed('left') ) {
+			redSphere.body.angularVelocity.x = 20;
+		} else if( keyboard.pressed('right') ) {
+			redSphere.body.angularVelocity.x = -20;
+		} else {
+			redSphere.body.angularVelocity.x = 0;
+		}
+
+		if ( keyboard.pressed('up') ) {
+			redSphere.body.angularVelocity.z = 20;
+		} else if( keyboard.pressed('down') ) {
+			redSphere.body.angularVelocity.z = -20;
+		} else {
+			redSphere.body.angularVelocity.z = 0;
+		}
+
+	});*/
+
+
+	var generateControls = function (target, keys) {
+		return function () {
+			var speed = 20;
+			if ( keyboard.pressed(keys.left) ) {
+
+				target.body.angularVelocity.x = speed;
+			} else if( keyboard.pressed(keys.right) ) {
+				target.body.angularVelocity.x = -speed;
+			} else {
+				target.body.angularVelocity.x = 0;
+			}
+
+			if ( keyboard.pressed(keys.up) ) {
+				target.body.angularVelocity.z = speed;
+			} else if( keyboard.pressed(keys.down) ) {
+				target.body.angularVelocity.z = -speed;
+			} else {
+				target.body.angularVelocity.z = 0;
+			}
+		}
+	};
+
+
+	var redSphere = generateSphere(0xff0000, 5);
+	var blueSphere = generateSphere(0x0000ff, 2);
+
+	updateFcts.push(generateControls(redSphere, {left: 'left', right: 'right', up: 'up', down: 'down'}));
+	updateFcts.push(generateControls(blueSphere, {left: 'a', right: 'd', up: 'w', down: 's'}));
+
+	var i =0;
+
+	renderer.domElement.onmousewheel = function (event) {
+		// called when the window is scrolled.
+		console.log('scroll', event);
+
+		plane.setRotationFromAxisAngle(10*(i++));
+	};
+
+	// only on keyup
+	keyboard.domElement.addEventListener('keyup', function(event){
+		if( keyboard.eventMatches(event, 'r') )	{
+			document.location = '?';
+		}
+	});
+
+	var animate = function animate(nowMs){
+		// keep looping
+		requestAnimationFrame( animate );
+
+		// measure time
+		lastTimeMs	= lastTimeMs || nowMs - 1000/60;
+		var deltaMs	= Math.min(200, nowMs - lastTimeMs);
+		lastTimeMs	= nowMs;
+
+
+
+
+
+		// call each update function
+		updateFcts.forEach(function(updateFn){
+			updateFn(deltaMs/1000, nowMs/1000);
+		})
+	};
+
+	var lastTimeMs = null
+	requestAnimationFrame(animate);
+
+	/*var controls = new THREE.OrbitControls( camera );
+	controls.addEventListener( 'change', animate );*/
+
+</script>
+</body>
+</html>
