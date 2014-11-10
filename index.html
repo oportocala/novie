@@ -54,12 +54,13 @@
 	));
 
 
-	var  generateSphere = function (color, y) {
+	var  generateSphere = function (color, y, name) {
 		var geometry = new THREE.SphereGeometry(1, 10, 10);
 		var material = new THREE.MeshBasicMaterial( { color: color || 0x00000, wireframe: true } );
 		var mesh = new THREE.Mesh( geometry, material );
 
 		mesh.position.y = y;
+		mesh.isSphere = true;
 		scene.add( mesh );
 
 
@@ -68,6 +69,14 @@
 			material: stoneMaterial,
 			mass: 100
 		}).addTo(worldX);
+
+		mesh.name = physicsBody.name = name;
+
+		physicsBody.body.addEventListener("collide", function(e) {
+			if (e.with.userData.object3d.isSphere) {
+				console.log(e.with.userData.object3d.name, 'collided with', name);
+			}
+		});
 
 		updateFcts.push(function(delta, now){
 			physicsBody.update(delta, now)
@@ -107,15 +116,7 @@
 	}();
 
 
-	updateFcts.push(function() {
 
-		//camera.position.x = redSphere.body.position.x + 50;
-		//camera.position.z = redSphere.body.position.z;
-		if (plane)
-			camera.lookAt(plane.body.position);
-
-		renderer.render( scene, camera );
-	});
 
 
 	var keyboard	= new THREEx.KeyboardState(renderer.domElement);
@@ -144,12 +145,64 @@
 		}
 	};
 
+	var redSphere;
+	var blueSphere;
 
-	var redSphere = generateSphere(0xff0000, 5);
-	var blueSphere = generateSphere(0x0000ff, 2);
+	var initScene = function () {
+		redSphere = generateSphere(0xff0000, 5, 'red');
+		blueSphere = generateSphere(0x0000ff, 2, 'blue');
 
-	updateFcts.push(generateControls(redSphere, {left: 'left', right: 'right', up: 'up', down: 'down'}));
-	updateFcts.push(generateControls(blueSphere, {left: 'a', right: 'd', up: 'w', down: 's'}));
+		updateFcts.push(generateControls(redSphere, {left: 'left', right: 'right', up: 'up', down: 'down'}));
+		updateFcts.push(generateControls(blueSphere, {left: 'a', right: 'd', up: 'w', down: 's'}));
+	};
+
+
+	initScene();
+
+
+	var deathY = -30;
+
+	var sphereDied = function (target) {
+		target.isDead = true;
+		console.log(target.name, 'died');
+		resetScene();
+	};
+
+	var resetSphere = function (target) {
+		target.body.position.x = target.body.initPosition.x;
+		target.body.position.y = target.body.initPosition.y;
+		target.body.position.z = target.body.initPosition.z;
+
+		target.body.velocity.x = 0;
+		target.body.velocity.y = 0;
+		target.body.velocity.z = 0;
+	};
+
+	var resetScene = function () {
+		resetSphere(redSphere);
+		resetSphere(blueSphere);
+	};
+
+
+	updateFcts.push(function() {
+
+		if (blueSphere.body.position.y < deathY && !blueSphere.isDead) {
+			sphereDied(blueSphere);
+		}
+
+		if (redSphere.body.position.y < deathY && !redSphere.isDead) {
+			sphereDied(redSphere);
+		}
+
+	});
+
+	updateFcts.push(function() {
+
+		if (plane)
+			camera.lookAt(plane.body.position);
+
+		renderer.render( scene, camera );
+	});
 
 	// only on keyup
 	keyboard.domElement.addEventListener('keyup', function(event){
