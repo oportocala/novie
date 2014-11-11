@@ -21,9 +21,33 @@
 <script src="bower_components/threex.cannonjs/threex.cannonbody.js"></script>
 <script src="bower_components/threex.cannonjs/threex.cannonworld.js"></script>
 <script src="bower_components/threex.keyboardstate/threex.keyboardstate.js"></script>
+<script src="bower_components/howler.js/howler.js"></script>
+
 <!--<script src="app/js/setup.js"></script>
 <script src="app/js/geometry.js"></script>
 <script src="app/js/loop.js"></script>-->
+<script>
+    var sound = function () {
+        var sounds = {
+            impact: new Howl({
+                urls: ['sounds/impact.mp3']
+            }),
+            death: new Howl({
+                urls: ['sounds/death.mp3']
+            })
+        };
+
+        return {
+            play: function (id) {
+                console.log('want to play:', id);
+                if (sounds[id]) {
+                    return sounds[id].play();
+                }
+                return false;
+            }
+        };
+    }();
+</script>
 <script>
 
 	var d2r = .017453292519943295;
@@ -75,6 +99,7 @@
 		physicsBody.body.addEventListener("collide", function(e) {
 			if (e.with.userData.object3d.isSphere) {
 				console.log(e.with.userData.object3d.name, 'collided with', name);
+                sound.play('impact');
 			}
 		});
 
@@ -165,6 +190,7 @@
 	var sphereDied = function (target) {
 		target.isDead = true;
 		console.log(target.name, 'died');
+        sound.play('death');
 		resetScene();
 	};
 
@@ -227,12 +253,8 @@
 		})
 	};
 
-	var lastTimeMs = null
+	var lastTimeMs = null;
 	requestAnimationFrame(animate);
-
-	/*var controls = new THREE.OrbitControls( camera );
-	controls.addEventListener( 'change', animate );*/
-
 </script>
 </body>
 </html>
