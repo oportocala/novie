@@ -30,16 +30,21 @@
     var sound = function () {
         var sounds = {
             impact: new Howl({
-                urls: ['sounds/impact.mp3']
+                urls: ['sounds/impact.mp3'],
+	              volume: 0.5
             }),
             death: new Howl({
-                urls: ['sounds/death.mp3']
+                urls: ['sounds/death.mp3'],
+	              volume: 0.5
+            }),
+            token: new Howl({
+                urls: ['sounds/token.mp3'],
+	              volume: 0.5
             })
         };
 
         return {
             play: function (id) {
-                console.log('want to play:', id);
                 if (sounds[id]) {
                     return sounds[id].play();
                 }
@@ -115,8 +120,8 @@
 
 
 	var plane = function generatePlane() {
-
-		var geometry = new THREE.CubeGeometry(100, 1, 100, 1, 1);
+        var planeSize = 50;
+		var geometry = new THREE.CubeGeometry(planeSize, 1, planeSize, 1, 1);
 		var material = new THREE.MeshBasicMaterial( { color: 0xffffff } );
 		var mesh = new THREE.Mesh( geometry, material );
 
@@ -134,15 +139,56 @@
 
 
 		updateFcts.push(function(delta, now){
-			physicsBody.update(delta, now)
+			physicsBody.update(delta, now);
 		});
+
+        physicsBody.body.addEventListener("collide", function(e) {
+            if (e.with.userData.object3d.isSphere) {
+                console.log(e.with.userData.object3d.name, 'collided with', name);
+                sound.play('impact');
+                physicsBody.body.sleep();
+            }
+        });
 
 		return physicsBody;
 	}();
 
+    var token = function () {
+        var geometry = new THREE.CubeGeometry(2, 2, 2, 2, 2,2 );
+        var material = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true } );
+        var mesh = new THREE.Mesh( geometry, material );
+
+        mesh.position.y = 1.5;
+        mesh.position.x = 5;
+        mesh.position.z = 5;
+
+        scene.add(mesh);
 
 
+        var physicsBody	= new THREEx.CannonBody({
+            mesh	: mesh,
+            mass	: 0
+        })
+        .addTo(worldX);
 
+
+        updateFcts.push(function(delta, now){
+            //physicsBody.update(delta, now);
+            mesh.rotation.y += .1;
+        });
+        var name = 'token';
+        mesh.name = physicsBody.name = name;
+        physicsBody.body.addEventListener("collide", function(e) {
+            if (e.with.userData.object3d.isSphere) {
+                console.log(e.with.userData.object3d.name, 'collided with', name);
+                sound.play('token');
+            }
+        });
+
+        return physicsBody;
+    }();
+
+	var cameraTarget = token;
 
 	var keyboard	= new THREEx.KeyboardState(renderer.domElement);
 	renderer.domElement.setAttribute("tabIndex", "0");
@@ -224,8 +270,9 @@
 
 	updateFcts.push(function() {
 
-		if (plane)
-			camera.lookAt(plane.body.position);
+		if (plane){
+            camera.lookAt(cameraTarget.mesh.position);
+        }
 
 		renderer.render( scene, camera );
 	});
