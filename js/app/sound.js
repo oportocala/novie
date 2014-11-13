@@ -1,15 +1,12 @@
 var sound = function () {
+	var base = 'http://vladgoran.ro/games/novie/';
 	var sounds = {
 		impact: new Howl({
-			urls: ['sounds/impact.mp3'],
+			urls: [base + 'sounds/impact.mp3'],
 			volume: 0.5
 		}),
 		death: new Howl({
-			urls: ['sounds/death.mp3'],
-			volume: 0.5
-		}),
-		token: new Howl({
-			urls: ['sounds/token.mp3'],
+			urls: [base + 'sounds/death.mp3'],
 			volume: 0.5
 		})
 	};

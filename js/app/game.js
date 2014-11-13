@@ -24,9 +24,8 @@ if (usePerspective) {
 }
 
 
-var updateFcts = [];
-var worldX = new THREEx.CannonWorld().start();
 
+var worldX = new THREEx.CannonWorld();
 var stoneMaterial = new CANNON.Material('stone');
 worldX.world.addContactMaterial(new CANNON.ContactMaterial(
 	stoneMaterial,
@@ -34,6 +33,8 @@ worldX.world.addContactMaterial(new CANNON.ContactMaterial(
 	0.1, // friction
 	0.1	// Restitution
 ));
+
+var updateFcts = [];
 
 
 var generateSphere = function (color, y, name) {
@@ -64,9 +65,6 @@ var generateSphere = function (color, y, name) {
 	updateFcts.push(function (delta, now) {
 		physicsBody.update(delta, now)
 	});
-
-	//physicsBody.body.angularVelocity.set(0,0,20);
-
 
 	return physicsBody;
 };
@@ -108,42 +106,6 @@ var plane = function generatePlane() {
 	return physicsBody;
 }();
 
-var token = function () {
-	var geometry = new THREE.CubeGeometry(2, 2, 2, 2, 2, 2);
-	var material = new THREE.MeshBasicMaterial({color: 0x000000, wireframe: true});
-	var mesh = new THREE.Mesh(geometry, material);
-
-	mesh.position.y = 1.5;
-	mesh.position.x = 5;
-	mesh.position.z = 5;
-
-	scene.add(mesh);
-
-
-	var physicsBody = new THREEx.CannonBody({
-		mesh: mesh,
-		mass: 0
-	})
-		.addTo(worldX);
-
-
-	updateFcts.push(function (delta, now) {
-		//physicsBody.update(delta, now);
-		mesh.rotation.y += .1;
-	});
-	var name = 'token';
-	mesh.name = physicsBody.name = name;
-	physicsBody.body.addEventListener("collide", function (e) {
-		if (e.with.userData.object3d.isSphere) {
-			console.log(e.with.userData.object3d.name, 'collided with', name);
-			sound.play('token');
-		}
-	});
-
-	return physicsBody;
-}();
-
-var cameraTarget = token;
 
 var keyboard = new THREEx.KeyboardState(renderer.domElement);
 renderer.domElement.setAttribute("tabIndex", "0");
@@ -179,6 +141,7 @@ var initScene = function () {
 
 	updateFcts.push(generateControls(redSphere, {left: 'left', right: 'right', up: 'up', down: 'down'}));
 	updateFcts.push(generateControls(blueSphere, {left: 'a', right: 'd', up: 'w', down: 's'}));
+	worldX.start();
 };
 
 
@@ -190,8 +153,8 @@ initScene();
 var sphereDied = function (target) {
 	target.isDead = true;
 	console.log(target.name, 'died');
-	sound.play('death');
-	resetScene();
+	//sound.play('death');
+	//resetScene();
 };
 
 var resetScene = function () {
@@ -226,11 +189,6 @@ updateFcts.push(function () {
 
 
 updateFcts.push(function () {
-
-	if (cameraTarget) {
-		//camera.lookAt(cameraTarget.mesh.position);
-	}
-
 	renderer.render(scene, camera);
 });
 
